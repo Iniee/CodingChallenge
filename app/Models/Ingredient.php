@@ -14,6 +14,6 @@ class Ingredient extends Model
 
     protected $primaryKey = "ingredient_id";
 
-    protected $fillable = ['name', 'stock in Kg', 'notification_mail'];
+    protected $fillable = ['name', 'stock_Kg', 'notification_mail'];
     
 }

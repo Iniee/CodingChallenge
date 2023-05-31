@@ -14,7 +14,7 @@ class Order extends Model
 
     protected $primaryKey = "order_id";
 
-    protected $fillable = ['customer_name', 'product_id', 'ingredients', 'quantity' ];
+    protected $fillable = ['product_id', 'ingredients', 'quantity' ];
      public function product()
     {
         return $this->belongsTo(Product::class);

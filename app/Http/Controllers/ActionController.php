@@ -7,58 +7,81 @@ use App\Mail\StockMail;
 use App\Models\Product;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class ActionController extends Controller
 {
     public function makeOrder(Request $request)
     {
-        $orderDetails = $request->all();
+        try {
+            $request->validate([
+                'products' => 'required|array',
+                'products.*.product_id' => 'required|exists:products,product_id',
+                'products.*.quantity' => 'required|integer',
+            ]);
 
-        $quantity = $orderDetails['quantity'];
+            $orderDetails = $request->all();
 
-        $beef = (150 / 1000) * $quantity;
-        $cheese = (30 / 1000) * $quantity;
-        $onion = (20 / 1000) * $quantity;
+            $products = $orderDetails['products'];
 
-        $ingredients = [
-            1 => $beef,
-            2 => $cheese,
-            3 => $onion
-        ];
+            foreach ($products as $product) {
+                $productId = $product['product_id'];
+                $quantity = $product['quantity'];
 
-        $ingredientsJson = json_encode($ingredients);
+                $product = Product::find($productId);
 
-        $order = Order::create([
-            'customer_name' => $orderDetails['customer_name'],
-            'product_id' => $orderDetails['product_id'],
-            'quantity' => $quantity,
-            'ingredients' => $ingredientsJson,
-        ]);
+                if (!$product) {
+                    return response()->json(['message' => 'Product not found'], 404);
+                }
 
-        foreach ($ingredients as $ingredientId => $stock) {
-            $ingredient = Ingredient::find($ingredientId);
+                $beef = (150 / 1000) * $quantity;
+                $cheese = (30 / 1000) * $quantity;
+                $onion = (20 / 1000) * $quantity;
 
-            if ($ingredient) {
-                $ingredient->stock_Kg -= $stock;
-                $ingredient->save();
+                $ingredients = [
+                    1 => $beef,
+                    2 => $cheese,
+                    3 => $onion
+                ];
 
-                if ($ingredient->stock_Kg < (0.5 * $ingredient->stock_Kg) && !$ingredient->restock) {
-                    $email = 'Inioluwa.eng@gmail.com';
-                    $ingredientName = $ingredient->name;
-                    $mail = "The stock level for the ingredient '$ingredientName' is below 50%. Please restock.";
+                $ingredientsJson = json_encode($ingredients);
 
-                    Mail::to($email)->send(new StockMail($ingredientName, $mail));
-                    $ingredient->notification_mail = true;
-                    $ingredient->save();
+                $order = Order::create([
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'ingredients' => $ingredientsJson,
+                ]);
+
+                foreach ($ingredients as $ingredientId => $stock) {
+                    $ingredient = Ingredient::find($ingredientId);
+
+                    if ($ingredient) {
+                        $ingredient->stock_Kg -= $stock;
+                        $ingredient->save();
+
+                        if ($ingredient->stock_Kg < (0.5 * $ingredient->initial_stock)) {
+                            $email = 'Inioluwa.eng@gmail.com';
+                            $ingredientName = $ingredient->name;
+                            $mail = "The stock level for the ingredient '$ingredientName' is below 50%. Please restock.";
+
+                            Mail::to($email)->send(new StockMail($ingredientName, $mail));
+                            $ingredient->notification_mail = true;
+                            $ingredient->save();
+                        }
+                    }
                 }
             }
+
+            return response()->json([
+                'message' => 'Order placed successfully',
+                'product' => $product->name,
+                'quantity' => $quantity
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage(),
+            ], 500);
         }
-        
-        return response()->json(['message' => 'Order placed successfully', 'product' => [
-            'product_id' => $order->product_id,
-            'quantity' => $order->quantity
-        ]]);
     }
 }
