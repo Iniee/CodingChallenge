@@ -50,7 +50,6 @@ class ActionController extends Controller
                     $mail = "The stock level for the ingredient '$ingredientName' is below 50%. Please restock.";
 
                     Mail::to($email)->send(new StockMail($ingredientName, $mail));
-                    // Set the flag to indicate that an alert email has been sent for this ingredient
                     $ingredient->notification_mail = true;
                     $ingredient->save();
                 }
