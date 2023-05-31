@@ -14,7 +14,7 @@
         Ingredient: {{ $ingredientName }}
     </p>
     <p>
-        Message: {{ $message }}
+        Message: {{ $mail }}
     </p>
     <p>
         Please restock the ingredient.

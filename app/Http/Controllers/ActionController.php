@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Mail\StockMail;
+use App\Models\Product;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,63 +14,52 @@ class ActionController extends Controller
 {
     public function makeOrder(Request $request)
     {
-
         $orderDetails = $request->all();
 
-        // Create an order
+        $quantity = $orderDetails['quantity'];
+
+        $beef = (150 / 1000) * $quantity;
+        $cheese = (30 / 1000) * $quantity;
+        $onion = (20 / 1000) * $quantity;
+
+        $ingredients = [
+            1 => $beef,
+            2 => $cheese,
+            3 => $onion
+        ];
+
+        $ingredientsJson = json_encode($ingredients);
+
         $order = Order::create([
-            $order->customer_name = $orderDetails['customer_name']
+            'customer_name' => $orderDetails['customer_name'],
+            'product_id' => $orderDetails['product_id'],
+            'quantity' => $quantity,
+            'ingredients' => $ingredientsJson,
         ]);
 
-        // Calculate the amount consumed for each ingredient
-        // Assuming the order = burger
-        $cheese = 30;
-        $beef = 150;
-        $onion = 20;
+        foreach ($ingredients as $ingredientId => $stock) {
+            $ingredient = Ingredient::find($ingredientId);
 
-        // Update the stock of each ingredient
-        DB::transaction(function () use ($beef, $cheese, $onion) {
-            $beefIngredient = Ingredient::where('name', 'Beef')->firstOrFail();
-            $cheeseIngredient = Ingredient::where('name', 'Cheese')->firstOrFail();
-            $onionIngredient = Ingredient::where('name', 'Onion')->firstOrFail();
+            if ($ingredient) {
+                $ingredient->stock_Kg -= $stock;
+                $ingredient->save();
 
-            // Update the stock levels
-            $beefIngredient->stock -= $beef;
-            $cheeseIngredient->stock -= $cheese;
-            $onionIngredient->stock -= $onion;
+                if ($ingredient->stock_Kg < (0.5 * $ingredient->stock_Kg) && !$ingredient->restock) {
+                    $email = 'Inioluwa.eng@gmail.com';
+                    $ingredientName = $ingredient->name;
+                    $mail = "The stock level for the ingredient '$ingredientName' is below 50%. Please restock.";
 
-            $beefIngredient->save();
-            $cheeseIngredient->save();
-            $onionIngredient->save();
-
-            // Check if any ingredient's stock level is below 50%
-            $this->checkIngredientStock($beefIngredient);
-            $this->checkIngredientStock($cheeseIngredient);
-            $this->checkIngredientStock($onionIngredient);
-        });
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Order placed successfully'
-        ], 200);
-    }
-
-    private function checkIngredientStock(Ingredient $ingredient)
-    {
-        $threshold = 0.5; // 50%
-        $currentStockLevel = $ingredient->stock;
-        $maxStockLevel = $ingredient->initial_stock;
-
-        if ($currentStockLevel <= $threshold * $maxStockLevel) {
-
-            $email = 'Inioluwa.eng@gmail.com';
-            $ingredientName = $ingredient->name;
-            $message = "The stock level for the ingredient '$ingredientName' is below 50%. Please restock.";
-
-            Mail::to($email)->send(new StockMail($ingredientName, $message));
-            // Set the flag to indicate that an alert email has been sent for this ingredient
-            $ingredient->needs_restock = true;
-            $ingredient->save();
+                    Mail::to($email)->send(new StockMail($ingredientName, $mail));
+                    // Set the flag to indicate that an alert email has been sent for this ingredient
+                    $ingredient->notification_mail = true;
+                    $ingredient->save();
+                }
+            }
         }
+        
+        return response()->json(['message' => 'Order placed successfully', 'product' => [
+            'product_id' => $order->product_id,
+            'quantity' => $order->quantity
+        ]]);
     }
 }

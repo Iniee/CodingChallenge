@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ActionController;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Action;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,3 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
+Route::post('place/order', [ActionController::class, 'makeOrder']);

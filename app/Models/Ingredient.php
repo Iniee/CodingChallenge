@@ -10,8 +10,10 @@ class Ingredient extends Model
 {
     use HasFactory;
 
-     public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    protected $table = 'ingredients';
+
+    protected $primaryKey = "ingredient_id";
+
+    protected $fillable = ['name', 'stock in Kg', 'notification_mail'];
+    
 }

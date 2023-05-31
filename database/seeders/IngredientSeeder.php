@@ -14,9 +14,9 @@ class IngredientSeeder extends Seeder
     public function run(): void
     {
          DB::table('ingredients')->insert([
-            ['name' => 'Beef', 'stock' => 20],
-            ['name' => 'Cheese', 'stock' => 5],
-            ['name' => 'Onion', 'stock' => 1],
+            ['name' => 'Beef', 'stock_Kg' => 20],
+            ['name' => 'Cheese', 'stock_Kg' => 5],
+            ['name' => 'Onion', 'stock_Kg' => 1],
         ]);
 
     }

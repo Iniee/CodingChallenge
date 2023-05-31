@@ -19,17 +19,17 @@ class StockMail extends Mailable
      use Queueable, SerializesModels;
 
     public $ingredientName;
-    public $message;
+    public $mail;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($ingredientName, $message)
+    public function __construct($ingredientName, $mail)
     {
         $this->ingredientName = $ingredientName;
-        $this->message = $message;
+        $this->mail = $mail;
     }
 
     /**

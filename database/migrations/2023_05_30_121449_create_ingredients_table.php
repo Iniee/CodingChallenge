@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ingredients', function (Blueprint $table) {
-            $table->id();
+            $table->id('ingredient_id');
             $table->string('name');
-            $table->integer('stock');
-            $table->boolean('restock')->default(false);
+            $table->decimal('stock_Kg', 8,2);
+            $table->boolean('notification_mail')->default(false);
             $table->timestamps();
         });
     }
