@@ -74,8 +74,7 @@ class ActionController extends Controller
 
             return response()->json([
                 'message' => 'Order placed successfully',
-                'product' => $product->name,
-                'quantity' => $quantity
+                'product' => $products,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
